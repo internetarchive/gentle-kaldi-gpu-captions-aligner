@@ -16,6 +16,7 @@ include:
 
 test:
   image: ${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}
+  stage: test
   script:
     - python3 align.py examples/data/lucier.mp3 examples/data/lucier.txt |tee output.txt
     - grep -CB1 -A30 '"alignedWord": "frequencies",' output.txt

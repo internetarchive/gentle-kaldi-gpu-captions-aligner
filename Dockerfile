@@ -55,9 +55,9 @@ g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
   -fPIC \
   -lgfortran -lm \
   $KLIBS \
-" |tr '\n' ' ' \
-  echo \
-  done \
+" |tr '\n' ' '; \
+  echo; \
+  done; \
 ) |bash -ex
 
 

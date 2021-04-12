@@ -15,3 +15,15 @@ but leveraging an nvidia/kaldi GPU optimized docker image.
 - https://medium.com/voicetube/build-gentle-w-cuda-enabled-kaldi-cb9eac86afc3
 - https://kaldi-asr.org/doc/cudamatrix.html
 - https://hub.docker.com/r/lowerquality/gentle/dockerfile
+
+
+
+## build, run & test
+```bash
+docker build -t                registry.gitlab.com/internetarchive/gentle-kaldi-gpu-captions-aligner .
+docker push                    registry.gitlab.com/internetarchive/gentle-kaldi-gpu-captions-aligner
+
+docker run --rm -it --gpus all registry.gitlab.com/internetarchive/gentle-kaldi-gpu-captions-aligner
+  # test, inside running container:
+  python3 align.py examples/data/lucier.mp3 examples/data/lucier.txt
+```

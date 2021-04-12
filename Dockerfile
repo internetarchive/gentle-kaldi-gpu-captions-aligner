@@ -43,30 +43,27 @@ $KALDI_SRC/nnet3/libkaldi-nnet3.so \
 $KALDI_SRC/online2/libkaldi-online2.so \
 $KALDI_SRC/transform/libkaldi-transform.so \
 $KALDI_SRC/tree/libkaldi-tree.so \
-$KALDI_SRC/util/libkaldi-util.so"
+$KALDI_SRC/util/libkaldi-util.so \
+/usr/local/cuda/lib64/stubs/libcuda.so \
+"
 
 # LD_LIBRARY_PATH=$(echo "$KLIBS" |rev |cut -f2- -d/ _rev |tr '\n' :)
-ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cudamatrix:/opt/kaldi/src/decoder:/opt/kaldi/src/feat:/opt/kaldi/src/fstext:/opt/kaldi/src/gmm:/opt/kaldi/src/hmm:/opt/kaldi/src/ivector:/opt/kaldi/src/lat:/opt/kaldi/src/matrix:/opt/kaldi/src/nnet2:/opt/kaldi/src/nnet3:/opt/kaldi/src/online2:/opt/kaldi/src/transform:/opt/kaldi/src/tree:/opt/kaldi/src/util:/opt/kaldi/tools/openfst-1.6.7/lib
+ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cudamatrix:/opt/kaldi/src/decoder:/opt/kaldi/src/feat:/opt/kaldi/src/fstext:/opt/kaldi/src/gmm:/opt/kaldi/src/hmm:/opt/kaldi/src/ivector:/opt/kaldi/src/lat:/opt/kaldi/src/matrix:/opt/kaldi/src/nnet2:/opt/kaldi/src/nnet3:/opt/kaldi/src/online2:/opt/kaldi/src/transform:/opt/kaldi/src/tree:/opt/kaldi/src/util:/opt/kaldi/tools/openfst-1.6.7/lib:/usr/local/cuda/lib64/stubs
 
 
 # build the `k3` and `m3` binaries
-RUN cd ext; ( \
-  for CC in k3 m3; do \
-    echo " \
-g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
-  -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H -DHAVE_OPENBLAS \
-  -I$KALDI_TOOLS/openfst-1.6.7/include \
-  -I$KALDI_SRC \
-  -Wno-sign-compare -Wall -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated-declarations \
-  -Winit-self \
-  -msse -msse2 -pthread -g \
-  -fPIC \
-  -lgfortran -lm \
-  $KLIBS \
-" |tr '\n' ' '; \
-  echo; \
-  done; \
-) |bash -ex
-
+RUN for CC in k3 m3; do \
+      cd /gentle/ext; \
+      g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
+        -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H -DHAVE_OPENBLAS \
+        -I$KALDI_TOOLS/openfst-1.6.7/include \
+        -I$KALDI_SRC \
+        -Wno-sign-compare -Wall -Wno-sign-compare -Wno-unused-local-typedefs \
+        -Wno-deprecated-declarations -Winit-self \
+        -msse -msse2 -pthread -g \
+        -fPIC \
+        -lgfortran -lm \
+        $KLIBS  ||  exit 1 \
+    done
 
 CMD /bin/bash

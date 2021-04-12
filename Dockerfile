@@ -63,7 +63,7 @@ RUN for CC in k3 m3; do \
         -msse -msse2 -pthread -g \
         -fPIC \
         -lgfortran -lm \
-        $KLIBS  ||  exit 1 \
+        $KLIBS  ||  exit 1; \
     done
 
 CMD /bin/bash

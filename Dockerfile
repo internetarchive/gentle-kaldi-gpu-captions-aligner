@@ -7,7 +7,7 @@ LABEL maintainer="Tracey Jaquith <tracey@archive.org>"
 
 RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg
 
-RUN  cd /  &&  clone https://github.com/lowerquality/gentle
+RUN  cd /  &&  git clone https://github.com/lowerquality/gentle
 WORKDIR /gentle
 
 ENV CUDA=true
@@ -35,10 +35,13 @@ $KALDI_SRC/util/libkaldi-util.so"
 # LD_LIBRARY_PATH=$(echo "$KLIBS" |rev |cut -f2- -d/ _rev |tr '\n' :)
 ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cudamatrix:/opt/kaldi/src/decoder:/opt/kaldi/src/feat:/opt/kaldi/src/fstext:/opt/kaldi/src/gmm:/opt/kaldi/src/hmm:/opt/kaldi/src/ivector:/opt/kaldi/src/lat:/opt/kaldi/src/matrix:/opt/kaldi/src/nnet2:/opt/kaldi/src/nnet3:/opt/kaldi/src/online2:/opt/kaldi/src/transform:/opt/kaldi/src/tree:/opt/kaldi/src/util:/opt/kaldi/tools/openfst-1.6.7/lib
 
+
 # fix missing include
 RUN cd /gentle/ext  &&  \
     ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
 
+
+# build the `k3` and `m3` binaries
 RUN ( \
   for CC in k3 m3; do \
     echo " \
@@ -56,6 +59,7 @@ g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
   echo \
   done \
 ) |bash -ex
+
 
 # fill 'exp' subdir
 RUN cd /gentle  &&  ./install_models.sh

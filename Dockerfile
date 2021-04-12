@@ -50,7 +50,7 @@ ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cuda
 
 
 # build the `k3` and `m3` binaries
-RUN ( \
+RUN cd ext; ( \
   for CC in k3 m3; do \
     echo " \
 g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \

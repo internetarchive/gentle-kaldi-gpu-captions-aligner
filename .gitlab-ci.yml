@@ -12,6 +12,11 @@ include:
   # @see https://gitlab.com/gitlab-org/cluster-integration/auto-build-image/blob/master/src/build.sh
 
 
+build:
+  stage: build
+  before_script:
+    - export DOCKER_BUILDKIT=1
+
 test:
   image: ${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}
   stage: test

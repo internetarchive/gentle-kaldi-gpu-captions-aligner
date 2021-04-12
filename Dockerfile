@@ -1,3 +1,7 @@
+# syntax = docker/dockerfile:1.0-experimental
+# https://docs.docker.com/develop/develop-images/build_enhancements/#overriding-default-frontends
+
+
 # Start with very recent nvidia + kaldi optimized cuda/GPU image.
 
 # To develop, you could run hooked into your GPU like:
@@ -9,6 +13,15 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg
 
 RUN  cd /  &&  git clone https://github.com/lowerquality/gentle
 WORKDIR /gentle
+
+
+# populate 'exp' subdir
+RUN ./install_models.sh
+
+
+# fix missing include
+RUN cd /gentle/ext && ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
+
 
 ENV CUDA=true
 ENV KALDI_SRC=/opt/kaldi/src
@@ -36,11 +49,6 @@ $KALDI_SRC/util/libkaldi-util.so"
 ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cudamatrix:/opt/kaldi/src/decoder:/opt/kaldi/src/feat:/opt/kaldi/src/fstext:/opt/kaldi/src/gmm:/opt/kaldi/src/hmm:/opt/kaldi/src/ivector:/opt/kaldi/src/lat:/opt/kaldi/src/matrix:/opt/kaldi/src/nnet2:/opt/kaldi/src/nnet3:/opt/kaldi/src/online2:/opt/kaldi/src/transform:/opt/kaldi/src/tree:/opt/kaldi/src/util:/opt/kaldi/tools/openfst-1.6.7/lib
 
 
-# fix missing include
-RUN cd /gentle/ext  &&  \
-    ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
-
-
 # build the `k3` and `m3` binaries
 RUN ( \
   for CC in k3 m3; do \
@@ -59,10 +67,6 @@ g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
   echo; \
   done; \
 ) |bash -ex
-
-
-# fill 'exp' subdir
-RUN cd /gentle  &&  ./install_models.sh
 
 
 CMD /bin/bash

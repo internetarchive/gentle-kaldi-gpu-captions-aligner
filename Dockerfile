@@ -20,13 +20,15 @@ RUN ./install_models.sh
 
 
 # fix missing include
-RUN cd /gentle/ext && ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
+RUN cd ext  &&  ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
 
 
+# NOTE: final needed .so lib file comes from nvidia base container
 ENV CUDA=true
 ENV KALDI_SRC=/opt/kaldi/src
 ENV KALDI_TOOLS=/opt/kaldi/tools
-ENV KLIBS="$KALDI_TOOLS/openfst-1.6.7/lib/libfst.so \
+ENV KLIBS="\
+$KALDI_TOOLS/openfst-1.6.7/lib/libfst.so \
 $KALDI_SRC/base/libkaldi-base.so \
 $KALDI_SRC/chain/libkaldi-chain.so \
 $KALDI_SRC/cudamatrix/libkaldi-cudamatrix.so \
@@ -44,11 +46,30 @@ $KALDI_SRC/online2/libkaldi-online2.so \
 $KALDI_SRC/transform/libkaldi-transform.so \
 $KALDI_SRC/tree/libkaldi-tree.so \
 $KALDI_SRC/util/libkaldi-util.so \
-/usr/local/cuda/lib64/stubs/libcuda.so \
+/usr/local/cuda/compat/lib.real/libcuda.so \
 "
 
-# LD_LIBRARY_PATH=$(echo "$KLIBS" |rev |cut -f2- -d/ _rev |tr '\n' :)
-ENV LD_LIBRARY_PATH=/opt/kaldi/src/base:/opt/kaldi/src/chain:/opt/kaldi/src/cudamatrix:/opt/kaldi/src/decoder:/opt/kaldi/src/feat:/opt/kaldi/src/fstext:/opt/kaldi/src/gmm:/opt/kaldi/src/hmm:/opt/kaldi/src/ivector:/opt/kaldi/src/lat:/opt/kaldi/src/matrix:/opt/kaldi/src/nnet2:/opt/kaldi/src/nnet3:/opt/kaldi/src/online2:/opt/kaldi/src/transform:/opt/kaldi/src/tree:/opt/kaldi/src/util:/opt/kaldi/tools/openfst-1.6.7/lib:/usr/local/cuda/lib64/stubs
+# LD_LIBRARY_PATH=$(echo "$KLIBS" |tr ' ' '\n' |rev |cut -f2- -d/ |rev |grep / |perl -ne 'chop; print; print ":\\\n"'; echo)
+ENV LD_LIBRARY_PATH=\
+/opt/kaldi/tools/openfst-1.6.7/lib:\
+/opt/kaldi/src/base:\
+/opt/kaldi/src/chain:\
+/opt/kaldi/src/cudamatrix:\
+/opt/kaldi/src/decoder:\
+/opt/kaldi/src/feat:\
+/opt/kaldi/src/fstext:\
+/opt/kaldi/src/gmm:\
+/opt/kaldi/src/hmm:\
+/opt/kaldi/src/ivector:\
+/opt/kaldi/src/lat:\
+/opt/kaldi/src/matrix:\
+/opt/kaldi/src/nnet2:\
+/opt/kaldi/src/nnet3:\
+/opt/kaldi/src/online2:\
+/opt/kaldi/src/transform:\
+/opt/kaldi/src/tree:\
+/opt/kaldi/src/util:\
+/usr/local/cuda/compat/lib.real
 
 
 # build the `k3` and `m3` binaries

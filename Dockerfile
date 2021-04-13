@@ -10,7 +10,7 @@
 FROM kaldiasr/kaldi:gpu-latest
 
 # ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
-ENV LIBCUDA_DIR=/usr/lib/x86_64-linux-gnu
+ENV LIBCUDA_DIR=/usr/local/cuda/compat
 
 
 LABEL maintainer="Tracey Jaquith <tracey@archive.org>"
@@ -21,8 +21,8 @@ RUN  cd /  &&  git clone https://github.com/lowerquality/gentle
 WORKDIR /gentle
 
 
-# populate 'exp' subdir
-RUN ./install_models.sh
+# populate 'exp' subdir (w/ less verbose wget)
+RUN perl -i -pe 's/wget/wget -q/' ./install_models.sh  &&  ./install_models.sh
 
 
 # fix missing include

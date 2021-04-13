@@ -6,11 +6,11 @@
 
 # pick/toggle each of these two pairs:
 
-# FROM nvcr.io/nvidia/kaldi:21.03-py3
-FROM kaldiasr/kaldi:gpu-latest
+FROM nvcr.io/nvidia/kaldi:21.03-py3
+# FROM kaldiasr/kaldi:gpu-latest
 
-# ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
-ENV LIBCUDA_DIR=/usr/local/cuda/compat
+ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
+# ENV LIBCUDA_DIR=/usr/local/cuda/compat
 
 
 LABEL maintainer="Tracey Jaquith <tracey@archive.org>"
@@ -87,6 +87,7 @@ RUN \
   for CC in k3 m3; do \
     g++ -std=c++11 -O3 -DNDEBUG -o $CC $CC.cc \
       -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H \
+      -DHAVE_CUDA \
       -DHAVE_ATLAS \
       -I $KALDI_SRC \
       -I $KALDI_TOOLS/openfst-1.6.7/include \
@@ -96,7 +97,6 @@ RUN \
       -lgfortran -lm -lpthread -ldl \
       $KLIBS  ||  exit 1; \
   done
-# -DHAVE_CUDA \
 
 
 # test like:

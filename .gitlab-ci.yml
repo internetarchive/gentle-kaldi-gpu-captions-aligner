@@ -23,4 +23,4 @@ test:
   script:
     - cd /gentle
     - python3 ./align.py examples/data/lucier.mp3 examples/data/lucier.txt |tee output.txt
-    - grep -m1 -CB1 -A30 natural output.txt
+    - grep -E -m1 -B1 -A40 '[^ ]natural' output.txt

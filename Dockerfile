@@ -4,12 +4,18 @@
 
 # Start with very recent nvidia + kaldi optimized cuda/GPU image.
 
-# To develop, you could run hooked into your GPU like:
-# docker run --rm -it --gpus all nvcr.io/nvidia/kaldi:21.03-py3 bash
-FROM nvcr.io/nvidia/kaldi:21.03-py3
+# pick/toggle each of these two pairs:
+
+# FROM nvcr.io/nvidia/kaldi:21.03-py3
+FROM kaldiasr/kaldi:gpu-latest
+
+# ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
+ENV LIBCUDA_DIR=/usr/lib/x86_64-linux-gnu
+
+
 LABEL maintainer="Tracey Jaquith <tracey@archive.org>"
 
-RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg
+RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 
 RUN  cd /  &&  git clone https://github.com/lowerquality/gentle
 WORKDIR /gentle
@@ -46,8 +52,8 @@ $KALDI_SRC/online2/libkaldi-online2.so \
 $KALDI_SRC/transform/libkaldi-transform.so \
 $KALDI_SRC/tree/libkaldi-tree.so \
 $KALDI_SRC/util/libkaldi-util.so \
-/usr/local/cuda/compat/lib.real/libcuda.so \
-"
+$LIBCUDA_DIR/libcuda.so"
+
 
 # LD_LIBRARY_PATH=$(echo "$KLIBS" |tr ' ' '\n' |rev |cut -f2- -d/ |rev |grep / |perl -ne 'chop; print; print ":\\\n"'; echo)
 ENV LD_LIBRARY_PATH=\
@@ -69,22 +75,31 @@ ENV LD_LIBRARY_PATH=\
 /opt/kaldi/src/transform:\
 /opt/kaldi/src/tree:\
 /opt/kaldi/src/util:\
-/usr/local/cuda/compat/lib.real
+$LIBCUDA_DIR
 
 
 # build the `k3` and `m3` binaries
-RUN for CC in k3 m3; do \
-      cd /gentle/ext; \
-      g++ -std=c++11 -O3 -DNDEBUG -I$KALDI_SRC/ -o $CC $CC.cc \
-        -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H -DHAVE_OPENBLAS \
-        -I$KALDI_TOOLS/openfst-1.6.7/include \
-        -I$KALDI_SRC \
-        -Wno-sign-compare -Wall -Wno-sign-compare -Wno-unused-local-typedefs \
-        -Wno-deprecated-declarations -Winit-self \
-        -msse -msse2 -pthread -g \
-        -fPIC \
-        -lgfortran -lm \
-        $KLIBS  ||  exit 1; \
-    done
+RUN \
+  # patch older cuda API calls out, then compile
+  cd /gentle/ext  && \
+  perl -i -pe 's/^.*cu_device.SetVerbose.*$//'  k3.cc  && \
+  perl -i -pe 's/^.*cu_device.ActiveGpuId.*$//' k3.cc  && \
+  for CC in k3 m3; do \
+    g++ -std=c++11 -O3 -DNDEBUG -o $CC $CC.cc \
+      -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H \
+      -DHAVE_ATLAS \
+      -I $KALDI_SRC \
+      -I $KALDI_TOOLS/openfst-1.6.7/include \
+      -I /usr/local/cuda-*/targets/x86_64-linux/include \
+      -msse -msse2 -pthread -g \
+      -fPIC \
+      -lgfortran -lm -lpthread -ldl \
+      $KLIBS  ||  exit 1; \
+  done
+# -DHAVE_CUDA \
 
-CMD /bin/bash
+
+# test like:
+#  python3 align.py examples/data/lucier.mp3 examples/data/lucier.txt
+
+CMD /bin/zsh

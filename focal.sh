@@ -1,10 +1,13 @@
 #!/bin/bash -ex
 
-docker run --rm -it --name ccgpu  -v /home/tracey/.zshrc:/root/.zshrc -v /home/tracey/av/env/aliases:/root/.aliases ubuntu:focal bash # --gpus all
+docker run --rm -it --name ccgpu \
+  --gpus all \
+  -v /home/tracey/.zshrc:/root/.zshrc \
+  -v /home/tracey/av/env/aliases:/root/.aliases ubuntu:focal bash
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update && \
-apt-get install -y \
+apt-get -yqq update && \
+apt-get -yqq install \
 		gcc g++ gfortran \
 		libc++-dev \
 		zlib1g-dev \
@@ -16,7 +19,7 @@ apt-get install -y \
 		python2.7 python2-dev \
 		wget unzip \
     \
-    zsh libatlas-base-dev
+    zsh libatlas-base-dev \
     \
     python-is-python3
 # python2-pip pkg replacement:
@@ -36,19 +39,21 @@ apt-get -yqq update
 
 apt-get -y install nvidia-cuda-dev nvidia-cuda-toolkit
 ls /usr/lib/cuda
+
+
 export CUDA=true
 
 cd /
 git clone https://github.com/lowerquality/gentle
 cd gentle
 git submodule init  &&  git submodule update
-#( cd ext/kaldi; git checkout 7ffc9ddeb3c8436e16aece88364462c89672a183 )
-#perl -i -pe 's/openfst\.cs\.nyu\.edu/www\.openfst\.org/g'                  ext/kaldi/tools/Makefile
-perl -i -pe 's|use\-cuda=no|use-cuda=yes --cudatk-dir=/usr/lib/cuda/|'     ext/install_kaldi.sh
+( cd ext/kaldi; git checkout 7ffc9ddeb3c8436e16aece88364462c89672a183 )
+perl -i -pe 's/openfst\.cs\.nyu\.edu/www\.openfst\.org/g'                  ext/kaldi/tools/Makefile
+perl -i -pe 's|use\-cuda=no|use-cuda=yes|'                                 ext/install_kaldi.sh
 perl -i -pe 's/make clean/make clean || echo make clean failed move on/'   ext/install_kaldi.sh
 perl -i -pe 's/cu_device\.SetVerbose\(true\)/cu_device.SetVerbose(false)/' ext/k3.cc
-perl -i -pe 's=#./bin/bash$=#!/bin/bash -ex='   install*.sh   ext/install_kaldi.sh   ext/kaldi/tools/extras/install_openblas.sh
-perl -i -pe 's=#./usr/bin/env bash$=#!/usr/bin/env bash -ex='   install*.sh   ext/install_kaldi.sh   ext/kaldi/tools/extras/install_openblas.sh
+perl -i -pe 's=#./bin/bash$=#!/bin/bash -ex='                        install*.h   ext/install_kaldi.sh
+perl -i -pe 's=#./usr/bin/env bash$=#!/usr/bin/env bash\nset -ex='   install*.sh  ext/install_kaldi.sh
 
 cd ext
 ./install_kaldi.sh
@@ -56,7 +61,7 @@ cd ext
 
 
 export CXX=/usr/bin/g++-8
-./configure --static --static-math=yes --static-fst=yes --use-cuda=yes --openblas-root=../tools/OpenBLAS/install
+./configure --static --static-math=yes --static-fst=yes --use-cuda=yes
 
 
 perl -i -pe 's/^.*SetVerbose.*$//; s/^.*cu_device.ActiveGpuId.*$//' k3.cc

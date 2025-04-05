@@ -16,13 +16,9 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 WORKDIR /gentle
 
 # switch to ~2020 version of tree
-RUN ( cd / && git clone https://github.com/lowerquality/gentle && cd gentle && git checkout 2148efc )
-
-# populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
-RUN perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh  &&  \
-  # fix missing include
-  cd ext  &&  ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
-
+RUN ( cd / && git clone https://github.com/lowerquality/gentle && cd gentle && git checkout 2148efc ) && \
+  # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
+  perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh
 
 # ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real # xxx
 ENV LIBCUDA_TARGETS=/usr/local/cuda-11.2/targets/x86_64-linux
@@ -79,8 +75,10 @@ $LIBCUDA_TARGETS/lib
 
 # build the `k3` and `m3` binaries
 RUN \
-  # patch older cuda API calls out, then compile
   cd /gentle/ext  && \
+  # fix missing include xxx
+  echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc && \
+  # patch older cuda API calls out, then compile
   perl -i -pe 's/^.*cu_device.SetVerbose.*$//'  k3.cc  && \
   perl -i -pe 's/^.*cu_device.ActiveGpuId.*$//' k3.cc  && \
   for FI in k3 m3; do \

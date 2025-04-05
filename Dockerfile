@@ -1,7 +1,3 @@
-# syntax = docker/dockerfile:1.0-experimental
-# https://docs.docker.com/develop/develop-images/build_enhancements/#overriding-default-frontends
-
-
 # Start with recent nvidia + kaldi optimized cuda/GPU image
 #
 # -- HOWEVER THE CUDA VERSION OUTSIDE ON YOUR VMs MUST MATCH THE VERSION (v11.2) HERE *EXACTLY*!
@@ -19,7 +15,9 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 
 WORKDIR /gentle
 
-RUN  ( cd /  &&  git clone https://github.com/lowerquality/gentle ) &&  \
+RUN  cd / && git clone https://github.com/lowerquality/gentle &&  \
+  # switch to ~2020 version of tree
+  git checkout 2148efc && \
   # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
   perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh  &&  \
   # fix missing include

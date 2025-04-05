@@ -15,9 +15,8 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 
 WORKDIR /gentle
 
-RUN  cd / && git clone https://github.com/lowerquality/gentle &&  \
-  # switch to ~2020 version of tree
-  git checkout 2148efc && \
+# switch to ~2020 version of tree
+RUN  ( cd / && git clone https://github.com/lowerquality/gentle && git checkout 2148efc ) && \
   # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
   perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh  &&  \
   # fix missing include

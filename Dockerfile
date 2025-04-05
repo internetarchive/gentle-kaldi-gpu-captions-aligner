@@ -16,9 +16,10 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 WORKDIR /gentle
 
 # switch to ~2020 version of tree
-RUN  ( cd / && git clone https://github.com/lowerquality/gentle && cd gentle && git checkout 2148efc ) && \
-  # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
-  perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh  &&  \
+RUN ( cd / && git clone https://github.com/lowerquality/gentle && cd gentle && git checkout 2148efc )
+
+# populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
+RUN perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh  &&  \
   # fix missing include
   cd ext  &&  ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc
 

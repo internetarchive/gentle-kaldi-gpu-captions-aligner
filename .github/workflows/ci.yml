@@ -11,6 +11,5 @@ jobs:
       # test using the just built-and-pushed docker image from the [cicd] job above
       image: 'docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}'
     steps:
-      - run: cd /gentle
-      - run: python3 ./align.py examples/data/lucier.mp3 examples/data/lucier.txt |tee output.txt
-      - run: grep -E -m1 -B1 -A40 '[^ ]natural' output.txt
+      - run: cd /gentle && python3 ./align.py examples/data/lucier.mp3 examples/data/lucier.txt |tee /tmp/output.txt
+      - run: grep -E -m1 -B1 -A40 '[^ ]natural' /tmp/output.txt

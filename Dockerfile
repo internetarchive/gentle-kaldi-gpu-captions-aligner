@@ -17,7 +17,7 @@ WORKDIR /gentle
 
 RUN git clone https://github.com/lowerquality/gentle . && \
   # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
-  perl -i -pe 's/wget/wget --no-check/' ./install_models.sh  &&  ./install_models.sh
+  perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh
 
 ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
 ENV LIBCUDA_TARGETS=/usr/local/cuda-12.3/targets/x86_64-linux

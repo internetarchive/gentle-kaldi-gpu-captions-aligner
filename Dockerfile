@@ -1,13 +1,13 @@
 # Start with recent nvidia + kaldi optimized cuda/GPU image
 #
-# -- HOWEVER THE CUDA VERSION OUTSIDE ON YOUR VMs MUST MATCH THE VERSION (v11.2) HERE *EXACTLY*!
+# -- HOWEVER THE CUDA VERSION OUTSIDE ON YOUR VMs MUST MATCH THE VERSION (v12.3) HERE *EXACTLY*!
 #
 #    You can compare with `nvidia-smi` outside the container vs `nvcc --version` inside.
-#    Find alternate [nvidia/kaldia] images here:
+#    Find alternate [nvidia/kaldi] images here:
 #    https://docs.nvidia.com/deeplearning/frameworks/kaldi-release-notes/rel_21-02.html
 #    https://ngc.nvidia.com/catalog/containers/nvidia:kaldi
 
-FROM nvcr.io/nvidia/kaldi:21.02-py3
+FROM nvcr.io/nvidia/kaldi:23.11-py3
 
 LABEL maintainer="Tracey Jaquith <tracey@archive.org>"
 
@@ -15,18 +15,18 @@ RUN apt-get -yqq update  &&  apt-get -yqq install  ffmpeg  zsh
 
 WORKDIR /gentle
 
-# switch to ~2020 version of tree
-RUN git clone https://github.com/lowerquality/gentle . && git checkout 2148efc && \
+RUN git clone https://github.com/lowerquality/gentle . && \
   # populate 'exp' subdir ( w/ less verbose wget; also 2021/04 their LE cert expired )-8
-  perl -i -pe 's/wget/wget --no-check -q/' ./install_models.sh  &&  ./install_models.sh
+  perl -i -pe 's/wget/wget --no-check/' ./install_models.sh  &&  ./install_models.sh
 
-# ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real # xxx
-ENV LIBCUDA_TARGETS=/usr/local/cuda-11.2/targets/x86_64-linux
+ENV LIBCUDA_DIR=/usr/local/cuda/compat/lib.real
+ENV LIBCUDA_TARGETS=/usr/local/cuda-12.3/targets/x86_64-linux
 ENV CUDA=true
 ENV KALDI_SRC=/opt/kaldi/src
 ENV KALDI_TOOLS=/opt/kaldi/tools
+ENV OPENFST=${KALDI_TOOLS}/openfst-1.7.2
 ENV KLIBS="\
-$KALDI_TOOLS/openfst-1.6.7/lib/libfst.so \
+$OPENFST/lib/libfst.so \
 $KALDI_SRC/base/libkaldi-base.so \
 $KALDI_SRC/chain/libkaldi-chain.so \
 $KALDI_SRC/cudamatrix/libkaldi-cudamatrix.so \
@@ -44,14 +44,14 @@ $KALDI_SRC/online2/libkaldi-online2.so \
 $KALDI_SRC/transform/libkaldi-transform.so \
 $KALDI_SRC/tree/libkaldi-tree.so \
 $KALDI_SRC/util/libkaldi-util.so \
-$LIBCUDA_TARGETS/lib/libcudart.so"
-#$LIBCUDA_DIR/libcuda.so"
+$LIBCUDA_TARGETS/lib/libcudart.so \
+$LIBCUDA_DIR/libcuda.so"
 
 
 # export LD_LIBRARY_PATH=$(echo "$KLIBS" |tr ' ' '\n' |grep / |rev |cut -f2- -d/ |rev |tr '\n' :)
 #        LD_LIBRARY_PATH=$(echo "$KLIBS" |tr ' ' '\n' |grep / |rev |cut -f2- -d/ |rev |perl -ne 'chop; print; print ":\\\n"'; echo)
 ENV LD_LIBRARY_PATH=\
-/opt/kaldi/tools/openfst-1.6.7/lib:\
+${OPENFST}/lib:\
 /opt/kaldi/src/base:\
 /opt/kaldi/src/chain:\
 /opt/kaldi/src/cudamatrix:\
@@ -77,17 +77,20 @@ $LIBCUDA_TARGETS/lib
 RUN \
   cd /gentle/ext  && \
   # fix missing include xxx
-  echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc && \
+  ( echo '#include "tree/context-dep.h"'; cat m3.cc ) >| x.cc  &&  mv x.cc m3.cc && \
   # patch older cuda API calls out, then compile
   perl -i -pe 's/^.*cu_device.SetVerbose.*$//'  k3.cc  && \
   perl -i -pe 's/^.*cu_device.ActiveGpuId.*$//' k3.cc  && \
+  # ensure these dirs exist
+  ls -ld ${OPENFST} && \
+  ls -ld ${LIBCUDA_TARGETS} && \
   for FI in k3 m3; do \
     g++ -std=c++11 -O3 -DNDEBUG -o $FI $FI.cc \
       -DKALDI_DOUBLEPRECISION=0 -DHAVE_EXECINFO_H=1 -DHAVE_CXXABI_H \
       -DHAVE_CUDA \
       -DHAVE_ATLAS \
       -I $KALDI_SRC \
-      -I $KALDI_TOOLS/openfst-1.6.7/include \
+      -I ${OPENFST}/include \
       -I $LIBCUDA_TARGETS/include \
       -msse -msse2 -pthread -g \
       -fPIC \
